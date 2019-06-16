@@ -1,11 +1,35 @@
 {
-	"extends": "./tsconfig.base.json",
 	"compilerOptions": {
-		"composite": true
+		"lib": [
+			"dom",
+			"es2015.collection",
+			"es2015.core",
+			"es2015.iterable",
+			"es2015.symbol.wellknown",
+			"es2016.array.include",
+			"es5"
+		],
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"noEmitOnError": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"preserveConstEnums": true,
+		"resolveJsonModule": true,
+		"rootDir": "./",
+		"strict": true,
+		"stripInternal": true,
+		"target": "es6",
+		"typeRoots": [
+			"./src/typings",
+			"./dist",
+			"node_modules/@types"
+		],
+		"types": []
 	},
-	"references": [
-		{ "path": "./src" },
-		{ "path": "./tests/unittests" }
-	],
-	"include": []
+	"include": [
+		"src/**/*.ts"
+	]
 }
+

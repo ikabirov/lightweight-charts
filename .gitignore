@@ -21,6 +21,7 @@ debug.html
 /dist/
 /src/**/*.js
 /src/**/*.d.ts
+tsickle-output/
 
 !/src/typings/**/*.d.ts
 

@@ -1,7 +1,9 @@
 import { DeepPartial } from '../helpers/strict-type-checks';
 
+import { BarPrice, BarPrices } from '../model/bar';
 import { ChartOptions } from '../model/chart-model';
 import { Point } from '../model/point';
+import { SeriesMarker } from '../model/series-markers';
 import {
 	AreaSeriesPartialOptions,
 	BarSeriesPartialOptions,
@@ -12,6 +14,7 @@ import {
 } from '../model/series-options';
 import { BusinessDay, UTCTimestamp } from '../model/time-data';
 
+import { Time } from './data-consumer';
 import { IPriceScaleApi } from './iprice-scale-api';
 import { ISeriesApi } from './iseries-api';
 import { ITimeScaleApi, TimeRange } from './itime-scale-api';
@@ -19,7 +22,9 @@ import { ITimeScaleApi, TimeRange } from './itime-scale-api';
 export interface MouseEventParams {
 	time?: UTCTimestamp | BusinessDay;
 	point?: Point;
-	seriesPrices: Map<ISeriesApi<SeriesType>, number>;
+	seriesPrices: Map<ISeriesApi<SeriesType>, BarPrice | BarPrices>;
+	hoveredSeries?: ISeriesApi<SeriesType>;
+	hoveredMarkerId?: SeriesMarker<Time>['id'];
 }
 
 export type MouseEventHandler = (param: MouseEventParams) => void;
@@ -143,8 +148,8 @@ export interface IChartApi {
 	options(): Readonly<ChartOptions>;
 
 	/**
-	 * Removes branding text from the chart.
-	 * Please read the description of this method in the documentation to learn more about the conditions of branding removal.
+	 * Make a screenshot of the chart with all the elements excluding crosshair.
+	 * @returns a canvas with the chart drawn on
 	 */
-	disableBranding(): void;
+	takeScreenshot(): HTMLCanvasElement;
 }

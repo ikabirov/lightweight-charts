@@ -46,6 +46,12 @@ function getConfig(inputFile, type, isProd) {
 					comments: /@license/,
 					inline_script: true,
 				},
+				mangle: {
+					module: (type === 'module'),
+					properties: {
+						regex: /^_private_/,
+					},
+				},
 			}),
 		],
 	};
@@ -61,7 +67,7 @@ const configs = [
 if (process.env.NODE_ENV === 'production') {
 	configs.push(
 		getConfig('./lib/src/index.js', 'module', true),
-		getConfig('./lib/src/standalone.js', 'standalone', true),
+		getConfig('./lib/src/standalone.js', 'standalone', true)
 	);
 }
 

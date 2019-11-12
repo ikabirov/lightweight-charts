@@ -9,16 +9,18 @@ import { IPaneRenderer } from '../../renderers/ipane-renderer';
 import { IUpdatablePaneView, UpdateType } from './iupdatable-pane-view';
 
 export abstract class SeriesPaneViewBase<TSeriesType extends SeriesType, ItemType extends TimedValue> implements IUpdatablePaneView {
-	protected _series: Series<TSeriesType>;
-	protected _model: ChartModel;
+	protected readonly _series: Series<TSeriesType>;
+	protected readonly _model: ChartModel;
 	protected _invalidated: boolean = true;
 	protected _dataInvalidated: boolean = true;
 	protected _items: ItemType[] = [];
 	protected _itemsVisibleRange: SeriesItemsIndexesRange | null = null;
+	private readonly _extendedVisibleRange: boolean;
 
-	public constructor(series: Series<TSeriesType>, model: ChartModel) {
+	public constructor(series: Series<TSeriesType>, model: ChartModel, extendedVisibleRange: boolean) {
 		this._series = series;
 		this._model = model;
+		this._extendedVisibleRange = extendedVisibleRange;
 	}
 
 	public update(updateType?: UpdateType): void {
@@ -46,11 +48,15 @@ export abstract class SeriesPaneViewBase<TSeriesType extends SeriesType, ItemTyp
 
 	protected abstract _convertToCoordinates(priceScale: PriceScale, timeScale: TimeScale, firstValue: number): void;
 
+	protected _clearVisibleRange(): void {
+		this._itemsVisibleRange = null;
+	}
+
 	protected _updatePoints(): void {
 		const priceScale = this._series.priceScale();
 		const timeScale = this._model.timeScale();
 
-		this._itemsVisibleRange = null;
+		this._clearVisibleRange();
 
 		if (timeScale.isEmpty() || priceScale.isEmpty()) {
 			return;
@@ -70,7 +76,7 @@ export abstract class SeriesPaneViewBase<TSeriesType extends SeriesType, ItemTyp
 			return;
 		}
 
-		this._itemsVisibleRange = visibleTimedValues(this._items, visibleBars);
-		this._convertToCoordinates(priceScale, timeScale, firstValue);
+		this._itemsVisibleRange = visibleTimedValues(this._items, visibleBars, this._extendedVisibleRange);
+		this._convertToCoordinates(priceScale, timeScale, firstValue.value);
 	}
 }

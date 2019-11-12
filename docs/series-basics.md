@@ -39,7 +39,7 @@ Here are common parameters for every series:
 |Name|Type|Default|Description|
 |-|----|-------|-|
 |`overlay`|`boolean`|`false`|Whether or not series should be an overlay|
-|`title`|`string`|`rgba(40, 221, 100, 0)`|You can name series when adding it to a chart. This name will be displayed on the label next to the last value label|
+|`title`|`string`|`''`|You can name series when adding it to a chart. This name will be displayed on the label next to the last value label|
 |`scaleMargins`|`{ top, bottom }`|`undefined`|[Margins](#scale-margins) of the _overlay_ series|
 
 Example:
@@ -206,21 +206,23 @@ series.applyOptions({
 
 #### Price format
 
-Three price formats are provided for displaying on the price scale:
+Four price formats are provided for displaying on the price scale:
 
 - `price` format, which is set by default, displays absolute price value as it is
 - `volume` format reduces number of digits of values over 1000, replacing zeros by letters. For example, '1000' absolute price value is shown as '1K' in a volume format.
 - `percent` format replaces absolute values with their percentage change.
+- `custom` format uses a user-defined function for price formatting that could be used in some specific cases, that are not covered by standard formatters
 
 The following options are available for setting the price format displayed by any type of series:
 
 |Name|Type|Default|Description|
 |----|----|-------|-|
-|`type`|`price` &#124; `volume` &#124; `percent`|`price`|Sets a type of price displayed by series|
+|`type`|`price` &#124; `volume` &#124; `percent` &#124; `custom` |`price`|Sets a type of price displayed by series|
 |`precision`|`number`|`2`|Specifies a number of decimal places used for price value display|
 |`minMove`|`number`|`0.01`|Sets the minimum possible step size for price value movement|
+|`formatter`|`function` &#124; `undefined`|`undefined`|Sets a formatting function that is used when the `type` is `custom`|
 
-Example:
+Examples:
 
 ```javascript
 series.applyOptions({
@@ -229,6 +231,18 @@ series.applyOptions({
         precision: 3,
         minMove: 0.05,
     },
+});
+```
+
+```javascript
+series.applyOptions({
+    priceFormat: {
+        type: 'custom',
+        minMove: 0.02,
+        formatter: function(price) {
+            return '$' + price.toFixed(2);
+        },
+    }
 });
 ```
 
@@ -254,7 +268,7 @@ barSeries.setData([
 ]);
 ```
 
-### updateData
+### update
 
 Adds new data item to the existing set (or updates the latest item if times of the passed/latest items are equal).
 
@@ -263,19 +277,66 @@ A single data item is expected.
 Examples:
 
 ```javascript
-lineSeries.updateData({
+lineSeries.update({
     time: '2018-12-12',
     value: 24.11,
 });
 ```
 
 ```javascript
-barSeries.updateData({
+barSeries.update({
     time: '2018-12-19',
     open: 141.77,
     high: 170.39,
     low: 120.25,
     close: 145.72,
+});
+```
+
+### setMarkers
+
+Allows to set/replace all existing series markers with new ones.
+
+An array of items is expected. Each item should contain the following fields:
+
+- `time` ([Time](./time.md)) - item time
+- `position` (`aboveBar` &#124; `belowBar` &#124; `inBar`) - item position
+- `shape` (`circle` &#124; `square` &#124; `arrowUp` &#124; `arrowDown`) - item marker type
+- `color` (`string`) - item color
+- `id` (`string` &#124; `undefined`) - item id, will be passed to click/crosshair move handlers
+
+Example:
+
+```javascript
+series.setMarkers([
+    {
+        time: '2019-04-09',
+        position: 'aboveBar',
+        color: 'black',
+        shape: 'arrowDown',
+    },
+    {
+        time: '2019-05-31',
+        position: 'belowBar',
+        color: 'red',
+        shape: 'arrowUp',
+        id: 'id3',
+    },
+    {
+        time: '2019-05-31',
+        position: 'belowBar',
+        color: 'orange',
+        shape: 'arrowUp',
+        id: 'id4',
+    },
+]);
+
+chart.subscribeCrosshairMove(function(param) {
+    console.log(param.hoveredMarkerId);
+});
+
+chart.subscribeClick(function(param) {
+    console.log(param.hoveredMarkerId);
 });
 ```
 

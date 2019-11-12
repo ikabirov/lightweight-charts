@@ -28,12 +28,24 @@ import { Watermark, WatermarkOptions } from './watermark';
 export interface HandleScrollOptions {
 	mouseWheel: boolean;
 	pressedMouseMove: boolean;
+	horzTouchDrag: boolean;
+	vertTouchDrag: boolean;
 }
 
 export interface HandleScaleOptions {
 	mouseWheel: boolean;
 	pinch: boolean;
 	axisPressedMouseMove: boolean;
+}
+
+export interface HoveredObject {
+	hitTestData?: unknown;
+	externalId?: string;
+}
+
+export interface HoveredSource {
+	source: IDataSource;
+	object?: HoveredObject;
 }
 
 type InvalidateHandler = (mask: InvalidateMask) => void;
@@ -83,7 +95,7 @@ export class ChartModel implements IDestroyable {
 
 	private _width: number = 0;
 	private _initialTimeScrollPos: number | null = null;
-	private _hoveredSource: IDataSource | null = null;
+	private _hoveredSource: HoveredSource | null = null;
 	private readonly _mainPriceScaleOptionsChanged: Delegate = new Delegate();
 	private _crosshairMoved: Delegate<TimePointIndex | null, Point | null> = new Delegate();
 
@@ -122,12 +134,19 @@ export class ChartModel implements IDestroyable {
 		this._invalidate(inv);
 	}
 
-	public hoveredSource(): IDataSource | null {
+	public hoveredSource(): HoveredSource | null {
 		return this._hoveredSource;
 	}
 
-	public setHoveredSource(source: IDataSource | null): void {
+	public setHoveredSource(source: HoveredSource | null): void {
+		const prevSource = this._hoveredSource;
 		this._hoveredSource = source;
+		if (prevSource !== null) {
+			this.updateSource(prevSource.source);
+		}
+		if (source !== null) {
+			this.updateSource(source.source);
+		}
 	}
 
 	public options(): Readonly<ChartOptions> {
@@ -156,6 +175,7 @@ export class ChartModel implements IDestroyable {
 
 	public updateAllPaneViews(): void {
 		this._panes.forEach((p: Pane) => p.updateAllViews());
+		this.updateCrosshair();
 	}
 
 	public timeScale(): TimeScale {
@@ -231,6 +251,7 @@ export class ChartModel implements IDestroyable {
 
 	public scalePriceTo(pane: Pane, priceScale: PriceScale, x: number): void {
 		pane.scalePriceTo(priceScale, x);
+		this.updateCrosshair();
 		this._invalidate(this._paneInvalidationMask(pane, InvalidationLevel.Light));
 	}
 
@@ -251,6 +272,7 @@ export class ChartModel implements IDestroyable {
 			return;
 		}
 		pane.scrollPriceTo(priceScale, x);
+		this.updateCrosshair();
 		this._invalidate(this._paneInvalidationMask(pane, InvalidationLevel.Light));
 	}
 
@@ -306,6 +328,7 @@ export class ChartModel implements IDestroyable {
 	public scaleTimeTo(x: Coordinate): void {
 		this._timeScale.scaleTo(x);
 		this.recalculateAllPanes();
+		this.updateCrosshair();
 		this.lightUpdate();
 	}
 
@@ -367,13 +390,18 @@ export class ChartModel implements IDestroyable {
 	public setAndSaveCurrentPosition(x: Coordinate, y: Coordinate, pane: Pane): void {
 		this._crosshair.saveOriginCoord(x, y);
 		let price = NaN;
-		const index = this._timeScale.coordinateToIndex(x);
+		let index = this._timeScale.coordinateToIndex(x);
+
+		const visibleBars = this._timeScale.visibleBars();
+		if (visibleBars !== null) {
+			index = Math.min(Math.max(visibleBars.firstBar(), index), visibleBars.lastBar()) as TimePointIndex;
+		}
 
 		const mainSource = pane.mainDataSource();
 		if (mainSource !== null) {
 			const priceScale = pane.defaultPriceScale();
-			if (!priceScale.isEmpty()) {
-				const firstValue = ensureNotNull(mainSource.firstValue());
+			const firstValue = priceScale.firstValue();
+			if (firstValue !== null) {
 				price = priceScale.coordinateToPrice(y, firstValue);
 			}
 			price = this._magnet.align(price, index, pane);
@@ -393,7 +421,7 @@ export class ChartModel implements IDestroyable {
 	}
 
 	public updateCrosshair(): void {
-		// rapply magnet
+		// apply magnet
 		const pane = this._crosshair.pane();
 		if (pane !== null) {
 			const x = this._crosshair.originCoordX();
@@ -508,7 +536,14 @@ export class ChartModel implements IDestroyable {
 		const pane = this._panes[0];
 		const series = this._createSeries(options, seriesType, pane);
 		this._serieses.push(series);
-		this.lightUpdate();
+
+		if (this._serieses.length === 1) {
+			// call fullUpdate to recalculate chart's parts geometry
+			this.fullUpdate();
+		} else {
+			this.lightUpdate();
+		}
+
 		return series;
 	}
 

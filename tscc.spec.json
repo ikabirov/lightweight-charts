@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"standalone": "./src/standalone.ts"
+	},
+	"prefix": "./dist/"
+}

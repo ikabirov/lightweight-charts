@@ -32,6 +32,7 @@
     "node": ">=10.12.0"
   },
   "devDependencies": {
+    "@tscc/tscc": "^0.4.6",
     "@types/chai": "~4.1.7",
     "@types/mocha": "~5.2.7",
     "chai": "~4.2.0",
@@ -55,6 +56,7 @@
     "vrsource-tslint-rules": "6.0.0"
   },
   "scripts": {
+    "tscc": "npm run bundle-dts && tscc -- --p tsconfig.tscc.json && tscc --clean",
     "install": "npm run install-hooks && cd tests/e2e && npm i",
     "install-hooks": "node scripts/githooks/install.js",
     "clean": "rimraf lib/ dist/",
